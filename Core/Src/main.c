@@ -52,7 +52,7 @@
 void SystemClock_Config(void);
 static void MPU_Config(void);
 /* USER CODE BEGIN PFP */
-
+void waterfall_led(uint8_t led_num);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -68,7 +68,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+uint8_t led_num = 4; // 设置流水灯的数量为 4
   /* USER CODE END 1 */
 
   /* MPU Configuration--------------------------------------------------------*/
@@ -107,15 +107,15 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
+   waterfall_led(led_num);
 
+   }
+   return 0;
     /* USER CODE BEGIN 3 */
-    led_on(0U);
-    HAL_Delay(250U);
-    led_off(0U);
-    HAL_Delay(250U);
+
   }
   /* USER CODE END 3 */
-}
+
 
 /**
   * @brief System Clock Configuration
