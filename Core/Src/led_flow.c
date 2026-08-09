@@ -1,19 +1,29 @@
 /**
  * @file    led_flow.c
- * @brief   流水灯非阻塞状态机实现（题目 5）。
+ * @brief   流水灯非阻塞状态机实现（题目 5 + 题目 6）。
  *          效果播放路径上不使用 HAL_Delay()，全部通过单次触发定时器调度。
  */
 #include "led_flow.h"
 #include "led.h"            /* 仅在实现文件中包含底层 LED 驱动，main.c 不 include */
+#include "buzzer.h"         /* 题目 6：蜂鸣器驱动只在 led_flow.c 内部使用 */
 
 /* 模块内部状态变量 */
 static soft_timer_t s_step_timer;                            /* 步骤切换定时器 */
 static uint8_t      s_step_index  = 0U;                      /* 当前步骤索引 */
 static led_flow_mode_t s_current_mode = LED_FLOW_MODE_IDLE;  /* 当前实际运行模式 */
 
+/* 题目 6：蜂鸣器节奏定时器与状态 */
+static soft_timer_t s_buzzer_timer;                          /* 蜂鸣器鸣叫切换定时器 */
+static uint8_t      s_buzzer_on   = 0U;                      /* 1=正在响，0=正在停 */
+
+/* 题目 6：模式 3 和模式 4 的蜂鸣器节奏配置 */
+static const buzzer_beat_t s_beat_pair = {200U, 800U};       /* 两两亮灭：响 200ms，停 800ms */
+static const buzzer_beat_t s_beat_all  = {50U, 100U};        /* 一起亮灭：响 50ms，停 100ms */
+static const buzzer_beat_t s_beat_off  = {0U, 0U};           /* 静音配置 */
+
 /**
  * @brief  启动单次触发软件定时器
- * @param  timer:     定时器结构体
+ * @param  timer:     定时器结构体指针
  * @param  period_ms: 定时时长，单位 ms
  * @note   题目 5 要求 2：基于 HAL_GetTick() 封装计时器。
  */
@@ -26,7 +36,7 @@ void timer_start(soft_timer_t *timer, uint32_t period_ms)
 
 /**
  * @brief  查询单次触发定时器是否到期
- * @param  timer: 定时器结构体
+ * @param  timer: 定时器结构体指针
  * @retval 1 表示到期，0 表示未到期
  * @note   题目 5 要求 3：计时器是单次触发。
  *         到期后自动把 running 清 0，不重新启动就不会再次触发。
@@ -72,14 +82,66 @@ static void all_leds_on(void)
 }
 
 /**
+ * @brief  蜂鸣器节奏复位（题目 6）
+ * @note   模式切换时立刻停止上一次鸣叫，避免残留。
+ */
+static void buzzer_flow_reset(void)
+{
+    buzzer_off();
+    s_buzzer_on = 0U;
+    s_buzzer_timer.running = 0U;  /* 停止蜂鸣器定时器 */
+}
+
+/**
+ * @brief  蜂鸣器节奏推进（题目 6）
+ * @note   复用题目 5 的 timer_start/timer_is_expired，不另写延时逻辑。
+ *         只在模式 3、模式 4 下按配置鸣叫；模式 1、2 静默。
+ */
+static void buzzer_flow_update(const buzzer_beat_t *beat)
+{
+    /* 当前模式不需要蜂鸣器：直接静默 */
+    if (beat->on_ms == 0U)
+    {
+        if (s_buzzer_on || s_buzzer_timer.running)
+        {
+            buzzer_flow_reset();
+        }
+        return;
+    }
+
+    /* 需要鸣叫，但定时器还在跑：等待到期 */
+    if (s_buzzer_timer.running && !timer_is_expired(&s_buzzer_timer))
+    {
+        return;   /* 时间未到，保持当前响/停状态 */
+    }
+
+    /* 定时器已停止（到期或初始状态），切换下一个响/停 */
+    if (s_buzzer_on)
+    {
+        /* 刚才在响，现在切换为停 */
+        buzzer_off();
+        s_buzzer_on = 0U;
+        timer_start(&s_buzzer_timer, beat->off_ms);
+    }
+    else
+    {
+        /* 刚才在停（或刚复位），现在切换为响 */
+        buzzer_on();
+        s_buzzer_on = 1U;
+        timer_start(&s_buzzer_timer, beat->on_ms);
+    }
+}
+
+/**
  * @brief  模式切换或进入新状态时复位内部状态
  * @note   题目 5 要求 5：signal 变化后下一轮立刻进入新状态。
- *         这里关闭所有 LED、重置步骤索引，并启动一个 0ms 定时器让下一轮立即执行新状态第一步。
+ *         题目 6：同时复位蜂鸣器节奏，避免上一次鸣叫残留。
  */
 static void led_flow_reset(void)
 {
     all_leds_off();
     s_step_index = 0U;
+    buzzer_flow_reset();             /* 蜂鸣器立刻静默 */
     timer_start(&s_step_timer, 0U);  /* 立即到期，下一轮进入新状态第一步 */
 }
 
@@ -174,9 +236,27 @@ static void update_mode_all(void)
 }
 
 /**
+ * @brief  根据当前模式获取蜂鸣器节奏配置
+ * @note   题目 6 要求 1/2：模式 3/4 有节奏，模式 1/2 静音。
+ */
+static const buzzer_beat_t *buzzer_get_beat(void)
+{
+    switch (s_current_mode)
+    {
+        case LED_FLOW_MODE_PAIR:
+            return &s_beat_pair;
+        case LED_FLOW_MODE_ALL:
+            return &s_beat_all;
+        default:
+            return &s_beat_off;
+    }
+}
+
+/**
  * @brief  非阻塞流水灯状态机更新函数
  * @note   题目 5 要求 4：main 的 while(1) 每轮调用一次本函数。
  *         题目 5 要求 5：signal 变化后立刻切换，不等当前步骤播完。
+ *         题目 6：同时更新蜂鸣器节奏，模式切换时立刻跟随。
  */
 void led_flow_update(void)
 {
@@ -186,6 +266,9 @@ void led_flow_update(void)
         s_current_mode = signal;
         led_flow_reset();
     }
+
+    /* 题目 6：每轮都更新蜂鸣器节奏，保持与流水灯同步 */
+    buzzer_flow_update(buzzer_get_beat());
 
     /* 时间未到，保持当前输出不变，直接返回 */
     if (!timer_is_expired(&s_step_timer))

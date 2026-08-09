@@ -12,6 +12,15 @@
 #define LED_FLOW_LED_COUNT 4U   /* 流水灯使用的 LED 数量 */
 
 /**
+ * @brief 蜂鸣器一次鸣叫配置（题目 6）
+ */
+typedef struct
+{
+    uint16_t on_ms;     /* 响多久 */
+    uint16_t off_ms;    /* 停多久 */
+} buzzer_beat_t;
+
+/**
  * @brief 一次亮灭的参数结构体（题目 3 保留）
  */
 typedef struct
