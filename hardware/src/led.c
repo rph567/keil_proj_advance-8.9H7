@@ -60,14 +60,3 @@ void led_off(uint8_t led_num)
             break;
     }
 }
-void waterfall_led(uint8_t led_num)
-{
-
-
-    for (uint8_t i = 1; i <= led_num; i++)
-    {
-        led_on(i);
-        HAL_Delay(250U);
-        led_off(i);
-    }
-}

@@ -22,7 +22,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "led.h"
+#include "led_flow.h"   /* 题目 3：只暴露流水灯公共接口，不 include led.h */
 #include "buzzer.h"
 
 /* USER CODE END Includes */
@@ -52,7 +52,7 @@
 void SystemClock_Config(void);
 static void MPU_Config(void);
 /* USER CODE BEGIN PFP */
-void waterfall_led(uint8_t led_num);
+/* waterfall_led() 声明已移到 led_flow.h，main.c 通过头文件间接使用 */
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -68,7 +68,8 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-uint8_t led_num = 4; // 设置流水灯的数量为 4
+  /* 题目 3：LED 数量由 led_flow.h 中的 LED_FLOW_LED_COUNT 统一管理，
+     不再在 main() 内单独定义变量 */
   /* USER CODE END 1 */
 
   /* MPU Configuration--------------------------------------------------------*/
@@ -98,7 +99,7 @@ uint8_t led_num = 4; // 设置流水灯的数量为 4
   HAL_Delay(100U);
   buzzer_off();
 
-  /* 题目3完成后，在这里调用封装好的流水灯初始化/运行函数 */
+
 
   /* USER CODE END 2 */
 
@@ -107,10 +108,9 @@ uint8_t led_num = 4; // 设置流水灯的数量为 4
   while (1)
   {
     /* USER CODE END WHILE */
-   waterfall_led(led_num);
-
-   }
-   return 0;
+    waterfall_led();
+  }
+  return 0;
     /* USER CODE BEGIN 3 */
 
   }
