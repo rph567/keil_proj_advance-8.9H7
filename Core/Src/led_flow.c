@@ -26,7 +26,8 @@ static void blink(const led_step_config_t step)
  * @note   题目 3 要求 4：将题目 2 的流水灯升级为调用 blink()。
  *         题目 3 要求 5：main.c 只调用本公共函数，不写流水灯逻辑。
  */
-void waterfall_led(void)
+
+void waterfall_led0(void)
 {
     /* 定义一次亮灭的参数结构体 */
     led_step_config_t step;
@@ -34,10 +35,42 @@ void waterfall_led(void)
     step.on_ms  = 250U;     /* 每颗 LED 点亮 250 ms */
     step.off_ms = 250U;     /* 每颗 LED 熄灭 250 ms */
 
-    /* 依次对 4 颗 LED 调用 blink() */
+    /* 依次亮灭 */
     for (uint8_t i = 1U; i <= LED_FLOW_LED_COUNT; i++)
     {
         step.led_num = i;   /* 当前要操作的 LED 编号 */
         blink(step);       /* 调用内部 blink() 完成一次亮灭 */
     }
+}
+
+void waterfall_led1(void)
+{
+
+    /*两两亮灭*/
+    for (uint8_t i = 1U; i <= LED_FLOW_LED_COUNT; i += 2)
+    {
+        led_on(i);
+        led_on(i + 1);
+        HAL_Delay(250U);
+        led_off(i);
+        led_off(i + 1);
+        HAL_Delay(250U);
+
+    }
+
+}
+void waterfall_led2(void)
+{
+    /*同时亮灭*/
+    led_on(1);
+    led_on(2);
+    led_on(3);
+    led_on(4);
+    HAL_Delay(250U);
+    led_off(1);
+    led_off(2);
+    led_off(3);
+    led_off(4);
+    HAL_Delay(250U);
+
 }

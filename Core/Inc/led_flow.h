@@ -23,7 +23,22 @@ typedef struct
     uint16_t off_ms;    /* 熄灭持续时间，单位 ms */
 } led_step_config_t;
 
+/**
+ * @brief 流水灯模式枚举
+ * @note  题目 4 要求 1：用 enum 定义三种流水灯模式
+ *        0：逐个亮灭，1：两两亮灭，2：一起亮灭
+ */
+typedef enum
+{
+    LED_FLOW_MODE_SINGLE = 0,   /* 逐个亮灭 */
+    LED_FLOW_MODE_PAIR   = 1,   /* 两两亮灭 */
+    LED_FLOW_MODE_ALL    = 2,   /* 一起亮灭 */
+    LED_FLOW_MODE_MAX
+} led_flow_mode_t;
 
-void waterfall_led(void);
+/* 三种流水灯效果，分别对应枚举的三种模式 */
+void waterfall_led0(void);  /* 模式 0：逐个亮灭 */
+void waterfall_led1(void);  /* 模式 1：两两亮灭 */
+void waterfall_led2(void);  /* 模式 2：一起亮灭（名字保持你原代码） */
 
 #endif /* LED_FLOW_H */

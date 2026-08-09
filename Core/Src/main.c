@@ -57,7 +57,10 @@ static void MPU_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+/* 题目 4：用枚举定义状态，signal 作为状态机输入信号。
+   调试时手动把 signal 改成 LED_FLOW_MODE_SINGLE / LED_FLOW_MODE_PAIR / LED_FLOW_MODE_ALL
+   即可观察三种流水灯模式切换。 */
+led_flow_mode_t signal = LED_FLOW_MODE_SINGLE;
 /* USER CODE END 0 */
 
 /**
@@ -108,7 +111,22 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-    waterfall_led();
+    /* 题目 4：根据 signal 状态切换不同流水灯模式 */
+    switch(signal)
+    {
+        case LED_FLOW_MODE_SINGLE:
+            waterfall_led0();   /* 模式 0：逐个亮灭 */
+            break;
+        case LED_FLOW_MODE_PAIR:
+            waterfall_led1();   /* 模式 1：两两亮灭 */
+            break;
+        case LED_FLOW_MODE_ALL:
+            waterfall_led2();   /* 模式 2：一起亮灭 */
+            break;
+        default:
+            signal = LED_FLOW_MODE_SINGLE;  /* 信号异常，复位为默认模式 */
+            break;
+    }
   }
   return 0;
     /* USER CODE BEGIN 3 */
